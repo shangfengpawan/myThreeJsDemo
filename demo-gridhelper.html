@@ -19,7 +19,7 @@
 <script>
     // Our Javascript will go here.
 
-    var renderer = new THREE.WebGLRenderer();
+    var renderer = new THREE.WebGLRenderer({antialias:true});
     renderer.setSize( window.innerWidth, window.innerHeight );
     document.body.appendChild( renderer.domElement );
 
@@ -43,7 +43,6 @@
 
     var geometry = new THREE.BoxGeometry( 1, 1, 1 );
     var material = new THREE.MeshNormalMaterial( { color: 0x00ff00 } );
-//    material.wireframe = true;
     var cube = new THREE.Mesh( geometry, material );
 
     var cube2 = new THREE.Mesh( geometry, material );
@@ -51,7 +50,12 @@
     scene.add( cube );
     scene.add( cube2 );
 
-//    scene.add(new THREE.AxisHelper(2));// 加入坐标轴
+    var size = 10;
+    var divisions = 10;
+    var gridHelper = new THREE.GridHelper( size, divisions );
+    scene.add( gridHelper );
+
+    //    scene.add(new THREE.AxisHelper(2));// 加入坐标轴
 
 
     function animate() {

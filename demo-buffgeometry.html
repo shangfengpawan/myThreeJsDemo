@@ -19,7 +19,7 @@
 <script>
     // Our Javascript will go here.
 
-    var renderer = new THREE.WebGLRenderer();
+    var renderer = new THREE.WebGLRenderer({antialias:true});
     renderer.setSize( window.innerWidth, window.innerHeight );
     document.body.appendChild( renderer.domElement );
 
@@ -32,7 +32,7 @@
     controls.screenSpacePanning = false;
     controls.minDistance = 5;
     controls.maxDistance = 50;
-    controls.maxPolarAngle = Math.PI / 2;
+//    controls.maxPolarAngle = Math.PI / 2;
 
     controls.keys.LEFT = 65; //A
     controls.keys.UP = 87;   //W
@@ -41,17 +41,58 @@
 
     controls.keys.keyPanSpeed = 30;
 
-    var geometry = new THREE.BoxGeometry( 1, 1, 1 );
-    var material = new THREE.MeshNormalMaterial( { color: 0x00ff00 } );
-//    material.wireframe = true;
+    var geometry = new THREE.BufferGeometry();
+    var vertices = new Float32Array( [
+        -1.0, -1.0,  1.0,
+        1.0, -1.0,  1.0,
+        1.0,  1.0,  1.0,
+
+        1.0,  1.0,  1.0,
+        -1.0,  1.0,  1.0,
+        -1.0, -1.0,  1.0,
+
+        -1.0, -1.0,  1.0,
+        -1.0, 1.0,  1.0,
+        -1.0,  -1.0,  -1.0,
+
+        -1.0,  -1.0,  -1.0,
+        -1.0,  1.0,  1.0,
+        -1.0, 1.0,  -1.0,
+
+        -1.0, 1.0,  -1.0,
+        -1.0,  1.0,  1.0,
+        1.0,  1.0,  1.0,
+//
+        1.0,  1.0,  1.0,
+        1.0,  1.0,  -1.0,
+        -1.0, 1.0,  -1.0,
+
+        -1.0, 1.0,  -1.0,
+        1.0,  1.0,  -1.0,
+        -1.0,  -1.0,  -1.0,
+
+        -1.0,  -1.0,  -1.0,
+        1.0,  1.0,  -1.0,
+        1.0,  -1.0,  -1.0,
+
+    ] );
+    geometry.addAttribute( 'position', new THREE.BufferAttribute( vertices, 3 ) );
+    var material = new THREE.MeshBasicMaterial( { color: 0xff0000 } );
+    material.wireframe = true;
     var cube = new THREE.Mesh( geometry, material );
+
 
     var cube2 = new THREE.Mesh( geometry, material );
     cube2.position.x = 4;
     scene.add( cube );
     scene.add( cube2 );
 
-//    scene.add(new THREE.AxisHelper(2));// 加入坐标轴
+    var size = 10;
+    var divisions = 10;
+    var gridHelper = new THREE.GridHelper( size, divisions );
+    scene.add( gridHelper );
+
+    //    scene.add(new THREE.AxisHelper(2));// 加入坐标轴
 
 
     function animate() {

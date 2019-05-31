@@ -10,7 +10,8 @@
 
     <script src="js/three.js"></script>
     <script src="js/controls/OrbitControls.js"></script>
-    <script src="js/GLTFLoader.js"></script>
+    <script src="js/loaders/DRACOLoader.js"></script>
+    <script src="js/loaders/GLTFLoader.js"></script>
 
 </head>
 <body>
@@ -19,9 +20,9 @@
 
 <script>
     // Our Javascript will go here.
-    var camera, scene, renderer;
+    var camera, scene, renderer,mixer;
     function init() {
-        renderer = new THREE.WebGLRenderer();
+        renderer = new THREE.WebGLRenderer({antialias:true});
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
 
@@ -48,11 +49,18 @@
         light.position.set( 10, 10, 10 ).normalize();
         scene.add( light );
 
+        THREE.DRACOLoader.setDecoderPath( 'js/libs/draco/gltf/' );
+
 
         var loader = new THREE.GLTFLoader().setPath( 'models/swamp_location/');
+        loader.setResourcePath('models/swamp_location/')
+        loader.setDRACOLoader( new THREE.DRACOLoader() );
         loader.load( 'scene.gltf', function ( gltf ) {
 
             scene.add( gltf.scene );
+
+            mixer = new THREE.AnimationMixer( model );
+            mixer.clipAction( gltf.animations[ 0 ] ).play();
         },
         function ( xhr ) {
 
