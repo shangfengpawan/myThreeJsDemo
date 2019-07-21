@@ -85,12 +85,13 @@
         var n2 = (n-1) / 2; // particles spread in the cube
         var iterCnt = 200; //迭代次数
         //公式 f(z) = z平方 + c
-        var c = {re:-0.75, im:0}
-//        var c= {re:0.45,im:-0.1428};
+//        var c = {re:-0.75, im:0}
+        var c= {re:0.45,im:-0.1428};
 //        var c = {re:0.285,im:0.01};
 //        var c = {re:-0.8,im:0.156};
 //        var c = {re:-0.835,im:-0.2321}
 //        var c= {re:-0.75,im:0.1}
+//        var c = {re: -1.2,im:0.156}
         var index = 0;
         for(var w=0;w<n;w++){
             for(var h=0;h<n;h++){
@@ -104,7 +105,7 @@
                 interleavedFloat32Buffer[ index + 2 ] = z;
 
 
-                var speed = getDiffuseSpeed({re:0,im:0},{re:x/(n/4),im:z/(n/4)},(n-1),iterCnt);
+                var speed = getDiffuseSpeed({re:x,im:z},c,(n-1),iterCnt);
                 var tmpColor = mycolorMaker.getColor(765,iterCnt,speed);
 
                 var j = ( index + 3 ) * 4;
@@ -126,6 +127,12 @@
         return pointsInfo;
     }
 
+    function getRadius(x,z,n){
+        var wx = x/(n/4);
+        var wz = z/(n/4);
+
+        return radiusSqur;
+    }
 
     function getDiffuseSpeed(z,c,n,p){  //p迭代次数
         var wz ={
