@@ -298,26 +298,26 @@
 
             var time = performance.now();
             var delta = ( time - prevTime ) / 1000;
-
+//            console.log(velocity)
             velocity.x -= velocity.x * 10.0 * delta;
             velocity.z -= velocity.z * 10.0 * delta;
 
             velocity.y -= 9.8 * 100.0 * delta; // 100.0 = mass
-
+//            console.log(velocity,delta)
             direction.z = Number( moveForward ) - Number( moveBackward );
             direction.x = Number( moveRight ) - Number( moveLeft );
             direction.normalize(); // this ensures consistent movements in all directions
 
             if ( moveForward || moveBackward ) velocity.z -= direction.z * 400.0 * delta;
             if ( moveLeft || moveRight ) velocity.x -= direction.x * 400.0 * delta;
-
+//            console.log("---",velocity,direction)
             if ( onObject === true ) {
                 console.log('12312',intersections[0].distance)
                 velocity.y = Math.max( 0, velocity.y );
                 canJump = true;
 
             }
-
+            var isMoveRight = true;
             var ray = new THREE.Raycaster( new THREE.Vector3(), new THREE.Vector3(1,0,0), 0, 10 );
             ray.ray.origin.copy( controls.getObject().position );
 //            ray.ray.origin.y -= 10;
@@ -325,8 +325,14 @@
             var crash = intersections.length >0;
             if(crash === true){
                 console.log('crash',intersections[0].distance);
+                isMoveRight = false;
             }
-
+            var cameraTarget = new THREE.Vector3();
+            camera.getWorldDirection(cameraTarget);
+            console.log(camera.position,cameraTarget)
+            if(!isMoveRight && direction.x){
+                velocity.x = 0;
+            }
             controls.moveRight( - velocity.x * delta );
             controls.moveForward( - velocity.z * delta );
 
