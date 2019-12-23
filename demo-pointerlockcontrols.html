@@ -320,15 +320,15 @@
                 canJump = true;
 
             }
-            var cameraTarget = new THREE.Vector3();
-            camera.getWorldDirection(cameraTarget);
-            console.log(camera.position,cameraTarget);
-            var dir = new THREE.Vector3();
+            let cameraTarget = new THREE.Vector3();
+            controls.getObject().getWorldDirection(cameraTarget)
+//            console.log(camera.position,cameraTarget);
+            let dir = new THREE.Vector3();
             //确认移动的方向，以便检测障碍物
             if (direction.z > 0) {
                 //W
-                dir.copy(cameraTarget.negate());
-            } else if (direction.z < 0) {//
+                dir.copy(cameraTarget).negate();
+            } else if (direction.z < 0) {
                 //S
                 dir.copy(cameraTarget);
             }
@@ -341,14 +341,15 @@
             }
 
 //            //用于检测障碍物
-//            var intersections2 = [];
-//            if (direction.z != 0 || direction.x != 0) {
+            let intersections2 = [];
+            if (direction.z != 0 || direction.x != 0) {
 //                raycaster.far = 30;
+                console.log(cameraTarget,'-----:',dir);
 //                raycaster.ray.direction.copy(dir);
-//                intersections2 = raycaster.intersectObjects(objects);
-//                raycaster.ray.direction.copy(directionY);
+                intersections2 = raycaster.intersectObjects(objects);
+                raycaster.ray.direction.copy(directionY);
 //                raycaster.far = 10;
-//            }
+            }
 //            var crash = intersections2.length>0;
 //            if(crash === true){
 //                console.log("crash");
