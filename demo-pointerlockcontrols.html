@@ -73,6 +73,9 @@
     var moveLeft = false;
     var moveRight = false;
     var canJump = false;
+    var jump = false;
+    var upSpeed = 320.0;
+    var moveSpeed = 450.0;
 
     var prevTime = performance.now();
     var velocity = new THREE.Vector3();
@@ -86,7 +89,7 @@
 
     function init() {
 
-        camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 1000 );
+        camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.1, 1000 );
         camera.position.y = 10;
 
         scene = new THREE.Scene();
@@ -149,8 +152,12 @@
                     break;
 
                 case 32: // space
-                    if ( canJump === true ) velocity.y += 350;
-                    canJump = false;
+                    if ( canJump === true && jump === false){
+                        velocity.y += upSpeed;
+                        canJump = false;
+                        jump = true;
+                    }
+
                     break;
 
             }
@@ -180,6 +187,9 @@
                 case 68: // d
                     moveRight = false;
                     break;
+                case 32: //space
+                    jump = false;
+                    break;
 
             }
 
@@ -192,7 +202,7 @@
 
         // floor
 
-        var floorGeometry = new THREE.PlaneBufferGeometry( 2, 2, 100, 100 );
+        var floorGeometry = new THREE.PlaneBufferGeometry( 2000, 2000, 100, 100 );
         floorGeometry.rotateX( - Math.PI / 2 );
 
         // vertex displacement
@@ -262,16 +272,16 @@
 
         }
 
-        var axesHelper = new THREE.AxesHelper( 50 );
-        scene.add( axesHelper );
-        //
+//        var axesHelper = new THREE.AxesHelper( 50 );
+//        scene.add( axesHelper );
+
 
         renderer = new THREE.WebGLRenderer( { antialias: true } );
         renderer.setPixelRatio( window.devicePixelRatio );
         renderer.setSize( window.innerWidth, window.innerHeight );
         document.body.appendChild( renderer.domElement );
 
-        //
+
 
         window.addEventListener( 'resize', onWindowResize, false );
 
@@ -302,64 +312,85 @@
             var time = performance.now();
             var delta = ( time - prevTime ) / 1000;
 //            console.log(velocity)
+            //以下为了保证有过渡效果
             velocity.x -= velocity.x * 10.0 * delta;
             velocity.z -= velocity.z * 10.0 * delta;
 
             velocity.y -= 9.8 * 100.0 * delta; // 100.0 = mass
-//            console.log(velocity,delta)
+
             direction.z = Number( moveForward ) - Number( moveBackward );
             direction.x = Number( moveRight ) - Number( moveLeft );
             direction.normalize(); // this ensures consistent movements in all directions
+            //人物移动距离计算
+            if ( moveForward || moveBackward ) velocity.z -= direction.z * moveSpeed * delta;
+            if ( moveLeft || moveRight ) velocity.x -= direction.x * moveSpeed * delta;
 
-            if ( moveForward || moveBackward ) velocity.z -= direction.z * 400.0 * delta;
-            if ( moveLeft || moveRight ) velocity.x -= direction.x * 400.0 * delta;
-//            console.log("---",velocity,direction)
             if ( onObject === true ) {
-                console.log('12312',intersections[0].distance)
+                console.log('up',intersections[0].distance)
                 velocity.y = Math.max( 0, velocity.y );
-                canJump = true;
-
+                if(jump === false){
+                    canJump = true;
+                }
             }
             let cameraTarget = new THREE.Vector3();
             controls.getObject().getWorldDirection(cameraTarget)
-//            console.log(camera.position,cameraTarget);
-            let dir = new THREE.Vector3();
+            let dir1 = new THREE.Vector3();
+            let dir2 = new THREE.Vector3();
             //确认移动的方向，以便检测障碍物
             if (direction.z > 0) {
                 //W
-                dir.copy(cameraTarget).negate();
+                dir1.copy(cameraTarget);
             } else if (direction.z < 0) {
                 //S
-                dir.copy(cameraTarget);
+                dir1.copy(cameraTarget).negate();
             }
             if (direction.x > 0) {
                 //A
-                dir.copy(cameraTarget).applyAxisAngle(directionY, 90.0);
+                dir2.copy(cameraTarget).applyAxisAngle(directionY, 90.0);
             } else if (direction.x < 0) {
                 //D
-                dir.copy(cameraTarget).applyAxisAngle(directionY, -90.0);
+                dir2.copy(cameraTarget).applyAxisAngle(directionY, -90.0);
             }
 
 //            //用于检测障碍物
+            let intersections1 = [];
             let intersections2 = [];
             if (direction.z != 0 || direction.x != 0) {
-//                raycaster.far = 30;
-                console.log(cameraTarget,'-----:',dir);
-//                raycaster.ray.direction.copy(dir);
-                intersections2 = raycaster.intersectObjects(objects);
-                raycaster.ray.direction.copy(directionY);
-//                raycaster.far = 10;
+                let racaster1 = new THREE.Raycaster( controls.getObject().position, dir1, 0, 10 );
+                intersections1 = racaster1.intersectObjects(objects);
+
+                let racaster2 = new THREE.Raycaster( controls.getObject().position, dir2, 0, 10 );
+                intersections2 = racaster2.intersectObjects(objects);
             }
-//            var crash = intersections2.length>0;
-//            if(crash === true){
-//                console.log("crash");
-//                if(direction.x != 0){
-//                    velocity.x = 0;
-//                }
-//                if(direction.z != 0){
-//                    velocity.z = 0;
-//                }
-//            }
+            var crash1 = intersections1.length>0;
+            var crash2 = intersections2.length>0;
+            if(crash1 === true){
+                console.log("crash1",intersections1.length,intersections1[0].distance);
+                if(direction.z != 0){
+                    velocity.z = 0;
+                }
+            }
+
+            if(crash2 === true){
+                console.log("crash2",intersections2.length,intersections2[0].distance);
+                if(direction.x != 0){
+                    velocity.x = 0;
+                }
+            }
+
+            //判断跳跃是头顶是否碰到物体
+            let intersections3 = [];
+            if(velocity.y >0 ){
+                let racaster3 = new THREE.Raycaster( controls.getObject().position, new THREE.Vector3(0,1,0), 0, 5 );
+                intersections3 = racaster3.intersectObjects(objects);
+            }
+            let crash3 = intersections3.length>0;
+            if(crash3){
+                console.log("crash3",intersections3.length,intersections3[0].distance);
+                velocity.y = 0;
+            }
+
+
 
             controls.moveRight( - velocity.x * delta );
             controls.moveForward( - velocity.z * delta );
