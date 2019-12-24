@@ -301,7 +301,7 @@
         requestAnimationFrame( animate );
 
         if ( controls.isLocked === true ) {
-
+            console.log(controls.getObject().position);
             raycaster.ray.origin.copy( controls.getObject().position );
             raycaster.ray.origin.y -= 10;
 
