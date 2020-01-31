@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title></title>
+    <style>
+        body { margin: 0; }
+        canvas { width: 100%; height: 100% }
+        .my-panel{
+            position:absolute;
+            right:1px;
+            width:350px;
+            height:300px;
+            z-index: 999;
+            background-color: #eee;
+            padding:5px;
+
+        }
+    </style>
+    <link rel="stylesheet" href="css/font-awesome.min.css">
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+    <script type="text/javascript" src="js/jquery.min.js"></script>
+    <script type="text/javascript" src="js/bootstrap.js"></script>
+    <script type="text/javascript" src="js/fileSave.js"></script>
+
+    <script src="js/three.js"></script>
+    <script src="js/controls/OrbitControls.js"></script>
+
+</head>
+<body style="overflow:hidden">
+
+<div class="my-panel">
+    <div class="row">
+        <div class="col-md-12">
+            <h4 style="font-weight: bold;">普通格子</h4>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-6">
+            <div class="row">
+                <div class="col-md-12">
+                    <label for="x-val">x:</label><input id="x-val" type="text" value="0" style="width:45px;">&nbsp;&nbsp;<label for="x-step">步长:</label><input id="x-step" value="1" type="text" style="width:45px;">
+                </div>
+
+            </div>
+            <div class="row">
+                <div class="col-md-12">
+                    <label for="y-val">y:</label><input id="y-val" type="text" value="0" style="width:45px;">&nbsp;&nbsp;<label for="y-step">步长:</label><input id="y-step" value="1" type="text" style="width:45px;">
+                </div>
+
+            </div>
+            <div class="row">
+                <div class="col-md-12">
+                    <label for="z-val">z:</label><input id="z-val" type="text" value="0" style="width:45px;">&nbsp;&nbsp;<label for="z-step">步长:</label><input id="z-step" type="text" value="1" style="width:45px;">
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="row">
+                <div class="col-md-12" style="text-align:center">
+                    <button type="button" class="btn-sm btn-primary" style="width:100px;" onclick="addCube()">增加</button>
+                </div>
+
+            </div>
+            <br>
+            <div class="row">
+                <div class="col-md-12" style="text-align:center">
+                    <button type="button" class="btn-sm btn-danger" style="width:100px;" onclick="delCube()">减少</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <h4 style="font-weight: bold;">终点格子</h4>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            <div class="row">
+                <div class="col-md-12">
+                    <label for="goal-x-val">x:</label><input id="goal-x-val" type="text" value="0" style="width:45px;">
+                    <label for="goal-y-val">y:</label><input id="goal-y-val" type="text" value="5" style="width:45px;">
+                    <label for="goal-z-val">z:</label><input id="goal-z-val" type="text" value="0" style="width:45px;">
+                    <button type="button" class="btn-sm btn-primary" style="width:50px;margin-left: 20px;" onclick="reCreateGoalCube()">确定</button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-6">
+            <h4 style="font-weight: bold;">关卡数据</h4>
+        </div>
+    </div>
+    <div class="row" >
+        <div class="col-md-12" style="text-align: center">
+            <button type="button" class="but-sm btn-success" style="width:300px;" onclick="saveFile()">导出</button>
+        </div>
+    </div>
+</div>
+
+</body>
+
+<script>
+    // Our Javascript will go here.
+    var mapObject = {
+        cubeList:[
+            {
+                x:0,
+                y:0,
+                z:0
+            }
+
+        ],
+        goal:{
+            x:0,
+            y:5,
+            z:0
+        }
+    };
+    var objects = [];
+    var goalObject = [];
+    var color = new THREE.Color();
+    var renderer,scene,camera,controls;
+    function  init(){
+
+
+
+        renderer = new THREE.WebGLRenderer({ antialias: true } );
+        renderer.setSize( window.innerWidth, window.innerHeight );
+        document.body.appendChild( renderer.domElement );
+
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color( 0xcccccc );
+        camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.1, 10000 );
+        camera.position.y = 200;
+        camera.position.z = 100;
+
+        controls = new THREE.OrbitControls(camera ,renderer.domElement);
+
+
+        var size = 400;
+        var divisions = 20;
+        var gridHelper = new THREE.GridHelper( size, divisions );
+        scene.add( gridHelper );
+
+            scene.add(new THREE.AxisHelper(100));// 加入坐标轴
+
+        var light = new THREE.HemisphereLight( 0xeeeeff, 0x777788, 0.75 );
+        light.position.set( 0.5, 1, 0.75 );
+        scene.add( light );
+
+        createCute(mapObject.cubeList);
+        createGoalCube();
+
+        window.addEventListener( 'resize', onWindowResize, false );
+
+    }
+
+
+    //    scene.add(new THREE.AxisHelper(2));// 加入坐标轴
+
+    function createCute(cubeList){
+        // objects
+
+        var boxGeometry = new THREE.BoxBufferGeometry( 20, 20, 20 );
+        boxGeometry = boxGeometry.toNonIndexed(); // ensure each face has unique vertices
+
+        var position = boxGeometry.attributes.position;
+        var colors = [];
+
+        for ( var i = 0, l = position.count; i < l; i ++ ) {
+
+            color.setHSL( Math.random() * 0.3 + 0.5, 0.75, Math.random() * 0.25 + 0.75 );
+            colors.push( color.r, color.g, color.b );
+
+        }
+
+        boxGeometry.addAttribute( 'color', new THREE.Float32BufferAttribute( colors, 3 ) );
+
+        for ( var i = 0; i < cubeList.length; i ++ ) {
+//        for ( var i = 0; i < 500; i ++ ) {
+            let tmpcube = cubeList[i];
+            var boxMaterial = new THREE.MeshPhongMaterial( { specular: 0xffffff, flatShading: true, vertexColors: THREE.VertexColors } );
+            boxMaterial.color.setHSL( Math.random() * 0.2 + 0.5, 0.75, Math.random() * 0.25 + 0.75 );
+
+            var box = new THREE.Mesh( boxGeometry, boxMaterial );
+//            box.position.x = Math.floor( Math.random() * 20 - 10 ) * 20;
+//            box.position.y = Math.floor( Math.random() * 20 ) * 20 + 10;
+//            box.position.z = Math.floor( Math.random() * 20 - 10 ) * 20;
+            box.position.x = Math.floor( tmpcube.x ) * 20;
+            box.position.y = Math.floor( tmpcube.y ) * 20 + 10;
+            box.position.z = Math.floor( tmpcube.z ) * 20;
+
+            scene.add( box );
+            objects.push( box );
+
+        }
+
+
+    }
+
+    function createGoalCube(){
+        var boxGeometry = new THREE.BoxBufferGeometry( 20, 20, 20 );
+        boxGeometry = boxGeometry.toNonIndexed(); // ensure each face has unique vertices
+        var position = boxGeometry.attributes.position;
+        var colors = [];
+
+        for ( var i = 0, l = position.count; i < l; i ++ ) {
+
+            color.setHSL( Math.random() * 0.3 + 0.5, 0.75, Math.random() * 0.25 + 0.75 );
+            colors.push( color.r, color.g, color.b );
+
+        }
+
+        boxGeometry.addAttribute( 'color', new THREE.Float32BufferAttribute( colors, 3 ) );
+
+        //终点
+        var boxMaterial = new THREE.MeshPhongMaterial( { specular: 0xffffff, flatShading: true, vertexColors: THREE.VertexColors } );
+        boxMaterial.color.setHSL( 0.92, 0.98,0.52 );
+        var goalBox = new THREE.Mesh( boxGeometry, boxMaterial );
+        goalBox.position.x = mapObject.goal.x * 20;
+        goalBox.position.y = mapObject.goal.y * 20 +10;
+        goalBox.position.z = mapObject.goal.z * 20;
+        scene.add( goalBox );
+        objects.push( goalBox );
+        goalObject.push(goalBox);
+    }
+
+    function onWindowResize() {
+
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+
+        renderer.setSize( window.innerWidth, window.innerHeight );
+
+    }
+
+    function animate() {
+        requestAnimationFrame( animate );
+
+        renderer.render( scene, camera );
+    }
+
+    function addCube(){
+        var xVal = $('#x-val').val();
+        var yVal = $('#y-val').val();
+        var zVal = $('#z-val').val();
+
+        var xStep = $('#x-step').val();
+        var yStep = $('#y-step').val();
+        var zStep = $('#z-step').val();
+
+        var tmpCube = {
+            x:parseInt(xVal),
+            y:parseInt(yVal),
+            z:parseInt(zVal)
+        }
+        var tmpCubeList = [];
+        tmpCubeList.push(tmpCube)
+        createCute(tmpCubeList);
+
+        mapObject.cubeList.push(tmpCube)
+
+
+        $('#x-val').val(parseInt(xVal) + parseInt(xStep));
+        $('#y-val').val(parseInt(yVal) + parseInt(yStep));
+        $('#z-val').val(parseInt(zVal) + parseInt(zStep));
+
+    }
+
+    function delCube(){
+        var xVal = $('#x-val').val();
+        var yVal = $('#y-val').val();
+        var zVal = $('#z-val').val();
+
+        var xStep = $('#x-step').val();
+        var yStep = $('#y-step').val();
+        var zStep = $('#z-step').val();
+
+        var tmpCube = {
+            x:parseInt(xVal) * 20,
+            y:parseInt(yVal) * 20 + 10,
+            z:parseInt(zVal) * 20
+        }
+
+
+        var delIndx = -1;
+        for(var i=0;i<objects.length;i++){
+            if(objects[i].position.x == tmpCube.x && objects[i].position.y == tmpCube.y && objects[i].position.z == tmpCube.z){
+                objects[i].traverse(function (item) {
+                    if (item instanceof THREE.Mesh) {
+                        item.geometry.dispose(); // 删除几何体
+                        item.material.dispose(); // 删除材质
+                        scene.remove(item);
+                    }
+                });
+                delIndx = i;
+                break;
+            }
+        }
+        if(delIndx != -1){
+            objects.splice(delIndx,1);
+        }
+
+        delIndx = -1;
+        for(var i =0 ;i<mapObject.cubeList.length;i++){
+            if(mapObject.cubeList[i].x == parseInt(xVal) && mapObject.cubeList[i].y == parseInt(yVal) && mapObject.cubeList[i].z == parseInt(zVal)){
+                delIndx = i;
+            }
+        }
+        if(delIndx != -1){
+            mapObject.cubeList.splice(delIndx,1);
+        }
+
+        $('#x-val').val(parseInt(xVal) + parseInt(xStep));
+        $('#y-val').val(parseInt(yVal) + parseInt(yStep));
+        $('#z-val').val(parseInt(zVal) + parseInt(zStep));
+    }
+
+    function reCreateGoalCube(){
+        var xVal = parseInt($('#goal-x-val').val());
+        var yVal = parseInt($('#goal-y-val').val());
+        var zVal = parseInt($('#goal-z-val').val());
+
+        var delIndx = -1;
+        for(var i=0;i<objects.length;i++){
+            if(objects[i].position.x == (mapObject.goal.x * 20) && objects[i].position.y == (mapObject.goal.y * 20 + 10) && objects[i].position.z == (mapObject.goal.z * 20 )){
+                objects[i].traverse(function (item) {
+                    if (item instanceof THREE.Mesh) {
+                        item.geometry.dispose(); // 删除几何体
+                        item.material.dispose(); // 删除材质
+                        scene.remove(item);
+                    }
+                });
+                delIndx = i;
+                break;
+            }
+        }
+        if(delIndx != -1){
+            objects.splice(delIndx,1);
+        }
+        goalObject = [];
+
+        mapObject.goal.x = xVal;
+        mapObject.goal.y = yVal;
+        mapObject.goal.z = zVal;
+
+        createGoalCube()
+    }
+
+    function saveFile(){
+        var blob = new Blob([JSON.stringify(mapObject)], {type: "text/plain;charset=utf-8"});
+        saveAs(blob, "map.json");//saveAs(blob,filename) //仅限于chorme的下载目录里
+    }
+
+    init();
+    animate();
+</script>
+</html>
