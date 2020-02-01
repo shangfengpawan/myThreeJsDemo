@@ -10,7 +10,7 @@
             position:absolute;
             right:1px;
             width:350px;
-            height:300px;
+            height:350px;
             z-index: 999;
             background-color: #eee;
             padding:5px;
@@ -33,8 +33,11 @@
 
 <div class="my-panel">
     <div class="row">
-        <div class="col-md-12">
+        <div class="col-md-4">
             <h4 style="font-weight: bold;">普通格子</h4>
+        </div>
+        <div class="col-md-6" style="margin-top: 5px;">
+            <button type="button" class="btn btn-default btn-sm btn-link" onclick="reverseStep()">反向</button>
         </div>
     </div>
     <div class="row">
@@ -122,6 +125,18 @@
             <h4 style="font-weight: bold;">关卡数据</h4>
         </div>
     </div>
+    <div class="row">
+        <div class="col-md-12">
+            <div class="col-lg-2" style="padding-left: 2px;padding-right: 2px;">
+                <label for="loadFileBut">导入:</label>
+            </div>
+            <div class="col-md-10" style="text-align: center;padding-left: 2px;padding-right: 2px;">
+                <input type="file" id="loadFileBut" accept="application/json">
+            </div>
+        </div>
+
+    </div>
+    <br>
     <div class="row" >
         <div class="col-md-12" style="text-align: center">
             <button type="button" class="but-sm btn-success" style="width:300px;" onclick="saveFile()">导出</button>
@@ -184,6 +199,7 @@
         createGoalCube();
 
         initSpinner();
+        initLoadFile();
 
         window.addEventListener( 'resize', onWindowResize, false );
 
@@ -271,6 +287,33 @@
         spinner.init('z-step-spinner','z-step',0);
     }
 
+    function initLoadFile(){
+        var inputElement = document.getElementById("loadFileBut");
+        inputElement.addEventListener("change", handleFiles, false);
+        function handleFiles() {
+            var selectedFile = document.getElementById("loadFileBut").files[0];//获取读取的File对象
+            var name = selectedFile.name;//读取选中文件的文件名
+            var size = selectedFile.size;//读取选中文件的大小
+            console.log("文件名:"+name+"大小："+size);
+            var reader = new FileReader();//这里是核心！！！读取操作就是由它完成的。
+            reader.readAsText(selectedFile);//读取文件的内容
+
+            reader.onload = function(){
+                console.log("读取结果：", this.result);//当读取完成之后会回调这个函数，然后此时文件的内容存储到了result中。直接操作即可。
+
+                let tmpJson = JSON.parse(this.result);
+
+                removeAllCute();
+
+                mapObject = tmpJson;
+
+                createCute(mapObject.cubeList);
+                createGoalCube();
+            };
+
+        }
+    }
+
     function onWindowResize() {
 
         camera.aspect = window.innerWidth / window.innerHeight;
@@ -322,6 +365,23 @@
         $('#y-val').val((parseInt(yVal) + parseInt(yStep)) < 0 ? 0 :(parseInt(yVal) + parseInt(yStep)));
         $('#z-val').val((parseInt(zVal) + parseInt(zStep)) > 50 ? 50 :((parseInt(zVal) + parseInt(zStep)) < -50 ? -50:(parseInt(zVal) + parseInt(zStep))));
 
+    }
+
+    function removeAllCute(){
+
+        for(var i=0;i<objects.length;i++){
+            objects[i].traverse(function (item) {
+                if (item instanceof THREE.Mesh) {
+                    item.geometry.dispose(); // 删除几何体
+                    item.material.dispose(); // 删除材质
+                    scene.remove(item);
+                }
+            });
+        }
+        objects = [];
+        goalObject = [];
+        mapObject.cubeList = [];
+//        renderer.render( scene, camera );
     }
 
     function delCube(){
@@ -402,6 +462,12 @@
         mapObject.goal.z = zVal;
 
         createGoalCube()
+    }
+
+    function reverseStep(){
+        $('#x-step').val(parseInt($('#x-step').val()) * -1);
+        $('#y-step').val(parseInt($('#y-step').val()) * -1);
+        $('#z-step').val(parseInt($('#z-step').val()) * -1);
     }
 
     function saveFile(){
