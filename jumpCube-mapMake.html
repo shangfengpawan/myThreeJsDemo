@@ -189,7 +189,7 @@
         var gridHelper = new THREE.GridHelper( size, divisions );
         scene.add( gridHelper );
 
-            scene.add(new THREE.AxisHelper(100));// 加入坐标轴
+            scene.add(new THREE.AxisHelper(1000));// 加入坐标轴
 
         var light = new THREE.HemisphereLight( 0xeeeeff, 0x777788, 0.75 );
         light.position.set( 0.5, 1, 0.75 );
@@ -309,6 +309,10 @@
 
                 createCute(mapObject.cubeList);
                 createGoalCube();
+
+                $('#goal-x-val').val(mapObject.goal.x);
+                $('#goal-y-val').val(mapObject.goal.y);
+                $('#goal-z-val').val(mapObject.goal.z);
             };
 
         }
