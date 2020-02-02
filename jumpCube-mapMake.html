@@ -10,7 +10,7 @@
             position:absolute;
             right:1px;
             width:350px;
-            height:350px;
+            height:430px;
             z-index: 999;
             background-color: #eee;
             padding:5px;
@@ -36,8 +36,17 @@
         <div class="col-md-4">
             <h4 style="font-weight: bold;">普通格子</h4>
         </div>
-        <div class="col-md-6" style="margin-top: 5px;">
-            <button type="button" class="btn btn-default btn-sm btn-link" onclick="reverseStep()">反向</button>
+
+    </div>
+    <div class="row">
+        <div class="col-md-12" style="margin-left: 70px; margin-bottom: 5px;">
+
+            <button type="button" class="btn btn-default btn-sm btn-link" style="padding:0;" onclick="xStep()">x向</button>
+            <button type="button" class="btn btn-default btn-sm btn-link" style="padding:0;" onclick="zStep()">z向</button>
+            <button type="button" class="btn btn-default btn-sm btn-link" style="padding:0;" onclick="xzStep()">xz向</button>
+            <button type="button" class="btn btn-default btn-sm btn-link" style="padding:0;" onclick="fuxzStep()">-xz向</button>
+            <button type="button" class="btn btn-default btn-sm btn-link" style="padding:0;" onclick="reverseStep()">反向</button>
+
         </div>
     </div>
     <div class="row">
@@ -83,6 +92,17 @@
                         <label for="z-step">步长:</label>
                     </div>
                     <div class="col-md-4" id="z-step-spinner" style="padding-left: 2px;padding-right: 2px;"></div>
+                </div>
+            </div>
+            <br>
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="col-md-1" style="height:34px;line-height: 34px;padding-left: 2px;padding-right: 2px;text-align: right;">
+                        <label for="h-val" style="color:black">高度:</label>
+                    </div>
+
+                    <div class="col-md-4" id="h-val-spinner" style="padding-left: 2px;padding-right: 2px;"></div>
+
                 </div>
             </div>
         </div>
@@ -285,6 +305,8 @@
 
         spinner.init('z-val-spinner','z-val',0);
         spinner.init('z-step-spinner','z-step',0);
+
+        spinner.init('h-val-spinner','h-val',1);
     }
 
     function initLoadFile(){
@@ -337,30 +359,42 @@
         var xVal = $('#x-val').val();
         var yVal = $('#y-val').val();
         var zVal = $('#z-val').val();
+        var hVal = parseInt($('#h-val').val());
 
         var xStep = $('#x-step').val();
         var yStep = $('#y-step').val();
         var zStep = $('#z-step').val();
 
-        var tmpCube = {
-            x:parseInt(xVal),
-            y:parseInt(yVal),
-            z:parseInt(zVal)
+        var tmpCubeList = [];
+        if(hVal < 1){
+            hVal = 1;
+            $('#h-val').val(1);
         }
-
-        var isExist = false;
-        for(var i=0;i<mapObject.cubeList.length;i++){
-            if(mapObject.cubeList[i].x == tmpCube.x && mapObject.cubeList[i].y == tmpCube.y && mapObject.cubeList[i].z == tmpCube.z){
-                isExist = true;
-                break;
+        for(var i=0;i<hVal;i++){
+            var tmpCube = {
+                x:parseInt(xVal),
+                y:parseInt(yVal) + i,
+                z:parseInt(zVal)
             }
-        }
-        if(!isExist){
-            var tmpCubeList = [];
             tmpCubeList.push(tmpCube);
-            createCute(tmpCubeList);
+        }
 
-            mapObject.cubeList.push(tmpCube)
+
+        for(var j=0;j<tmpCubeList.length;j++){
+            var isExist = false;
+            var tmpCube = tmpCubeList[j];
+            for(var i=0;i<mapObject.cubeList.length;i++){
+                if(mapObject.cubeList[i].x == tmpCube.x && mapObject.cubeList[i].y == tmpCube.y && mapObject.cubeList[i].z == tmpCube.z){
+                    isExist = true;
+                    break;
+                }
+            }
+            if(!isExist){
+
+                createCute([tmpCube]);
+
+                mapObject.cubeList.push(tmpCube)
+            }
         }
 
 
@@ -392,45 +426,57 @@
         var xVal = $('#x-val').val();
         var yVal = $('#y-val').val();
         var zVal = $('#z-val').val();
+        var hVal = parseInt($('#h-val').val());
 
         var xStep = $('#x-step').val();
         var yStep = $('#y-step').val();
         var zStep = $('#z-step').val();
 
-        var tmpCube = {
-            x:parseInt(xVal) * 20,
-            y:parseInt(yVal) * 20 + 10,
-            z:parseInt(zVal) * 20
+        var tmpCubeList = [];
+        if(hVal < 1){
+            hVal = 1;
+            $('#h-val').val(1);
+        }
+        for(var i=0;i<hVal;i++){
+            var tmpCube = {
+                x:parseInt(xVal) * 20 ,
+                y:(parseInt(yVal) + i) * 20 + 10,
+                z:parseInt(zVal) * 20
+            }
+            tmpCubeList.push(tmpCube);
         }
 
+        for(var j=0;j<tmpCubeList.length;j++){
+            var delIndx = -1;
+            var tmpCube = tmpCubeList[j];
+            for(var i=0;i<objects.length;i++){
+                if(objects[i].position.x == tmpCube.x && objects[i].position.y == tmpCube.y && objects[i].position.z == tmpCube.z){
+                    objects[i].traverse(function (item) {
+                        if (item instanceof THREE.Mesh) {
+                            item.geometry.dispose(); // 删除几何体
+                            item.material.dispose(); // 删除材质
+                            scene.remove(item);
+                        }
+                    });
+                    delIndx = i;
+                    break;
+                }
+            }
+            if(delIndx != -1){
+                objects.splice(delIndx,1);
+            }
 
-        var delIndx = -1;
-        for(var i=0;i<objects.length;i++){
-            if(objects[i].position.x == tmpCube.x && objects[i].position.y == tmpCube.y && objects[i].position.z == tmpCube.z){
-                objects[i].traverse(function (item) {
-                    if (item instanceof THREE.Mesh) {
-                        item.geometry.dispose(); // 删除几何体
-                        item.material.dispose(); // 删除材质
-                        scene.remove(item);
-                    }
-                });
-                delIndx = i;
-                break;
+            delIndx = -1;
+            for(var i =0 ;i<mapObject.cubeList.length;i++){
+                if(mapObject.cubeList[i].x == (tmpCube.x / 20) && mapObject.cubeList[i].y == ((tmpCube.y - 10)/20) && mapObject.cubeList[i].z == (tmpCube.z / 20)){
+                    delIndx = i;
+                }
+            }
+            if(delIndx != -1){
+                mapObject.cubeList.splice(delIndx,1);
             }
         }
-        if(delIndx != -1){
-            objects.splice(delIndx,1);
-        }
 
-        delIndx = -1;
-        for(var i =0 ;i<mapObject.cubeList.length;i++){
-            if(mapObject.cubeList[i].x == parseInt(xVal) && mapObject.cubeList[i].y == parseInt(yVal) && mapObject.cubeList[i].z == parseInt(zVal)){
-                delIndx = i;
-            }
-        }
-        if(delIndx != -1){
-            mapObject.cubeList.splice(delIndx,1);
-        }
 
         $('#x-val').val((parseInt(xVal) + parseInt(xStep)) > 50 ? 50 :((parseInt(xVal) + parseInt(xStep)) < -50 ? -50:(parseInt(xVal) + parseInt(xStep))));
         $('#y-val').val((parseInt(yVal) + parseInt(yStep)) < 0 ? 0 :(parseInt(yVal) + parseInt(yStep)));
@@ -466,6 +512,23 @@
         mapObject.goal.z = zVal;
 
         createGoalCube()
+    }
+
+    function xStep(){
+        $('#x-step').val(1);
+        $('#z-step').val(0);
+    }
+    function zStep(){
+        $('#x-step').val(0);
+        $('#z-step').val(1);
+    }
+    function xzStep(){
+        $('#x-step').val(1);
+        $('#z-step').val(1);
+    }
+    function fuxzStep(){
+        $('#x-step').val(-1);
+        $('#z-step').val(1);
     }
 
     function reverseStep(){
